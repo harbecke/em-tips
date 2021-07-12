@@ -9,16 +9,16 @@ def calculate_cross_probs(effects, result_probs):
     cross_probs = []
     sum_probs = []
 
-    for idx1 in range(num_results):
+    for idx1 in range(len(effects[0])):
         idx1_list = []
         sum_dict = defaultdict(lambda: [0]*num_results)
 
-        for idx2 in range(num_results):
+        for idx2 in range(len(effects[0])):
             idx2_dict = defaultdict(float)
 
             for idx3, prob in enumerate(result_probs):
-                idx2_dict[effects[idx3][idx1] - effects[idx3][idx2]] += prob
-                sum_dict[effects[idx3][idx1] - effects[idx3][idx2]][idx2] += prob
+                idx2_dict[effects[idx3%16][idx1] - effects[idx3%16][idx2] +5*(idx3//16)] += prob
+                sum_dict[effects[idx3%16][idx1] - effects[idx3%16][idx2] +5*(idx3//16)][idx2] += prob
 
             idx1_list.append(idx2_dict)
 
@@ -33,7 +33,7 @@ def calculate_rewards(sum_probs, current_diff, value_dict):
     for strat in sum_probs:
         value_sum = np.array([0]*len(sum_probs), dtype=float)
         for key, value in strat.items():
-            value_sum += np.array(value)*value_fun(current_diff-key, value_dict)
+            value_sum += np.array(value[:16])*value_fun(current_diff-key, value_dict)
 
         equation_list.append(value_sum)
 
@@ -61,6 +61,8 @@ def calculate_win_chance(sum_probs, eval_list, value_dict, verbose=False):
 
         results_dict[idx] = min(value_row)
 
+    if verbose:
+        print(results_dict)
     return results_dict
 
 
@@ -75,10 +77,12 @@ def value_fun(x, dict):
 
 def main():
     # ["1-1", "1-0", "0-0", "0-1", "2-1", "1-2", "2-0", "0-2", "2-2", "3-1", "3-0", "1-3", "3-2", "0-3", "2-3", "3-3"]
-    results_p1 = [0.143, 0.116, 0.105, 0.102, 0.087, 0.074, 0.071, 0.053, 0.052, 0.036, 0.031, 0.028, 0.021, 0.021,
-                  0.018, 0.009]
-    results_p2 = [0.116, 0.167, 0.106, 0.067, 0.091, 0.042, 0.115, 0.026, 0.037, 0.05, 0.057, 0.012, 0.022, 0.007, 0.01,
+    results_p1 = [0.148, 0.12, 0.109, 0.105, 0.09, 0.077, 0.074, 0.054, 0.054, 0.037, 0.032, 0.029, 0.022, 0.021, 0.019,
+                  0.009]
+    results_p2 = [0.13, 0.173, 0.13, 0.069, 0.104, 0.038, 0.124, 0.027, 0.030, 0.052, 0.055, 0.011, 0.022, 0.006, 0.022,
                   0.007]
+    results_p3 = [0.133, 0.129, 0.131, 0.12, 0.059, 0.069, 0.057, 0.061, 0.025, 0.023, 0.015, 0.026, 0.011, 0.021,
+                  0.009, 0.001, 0.015, 0, 0.007, 0, 0.015, 0, 0.015, 0, 0.018, 0.009, 0.011, 0, 0.008, 0, 0.006, 0.006]
     effects = [
         [5, 0, 4, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 4],
         [0, 5, 0, 0, 4, 0, 3, 0, 0, 3, 3, 0, 4, 0, 0, 0],
@@ -97,14 +101,15 @@ def main():
         [0, 0, 0, 4, 0, 4, 0, 3, 0, 0, 0, 3, 0, 3, 5, 0],
         [4, 0, 4, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 5]
     ]
-    value_dict = {0: 0.5}
-    cross_probs1, sum_probs1 = calculate_cross_probs(effects, results_p1)
-    cross_probs2, sum_probs2 = calculate_cross_probs(effects, results_p2)
 
-    value_dict = calculate_win_chance(sum_probs1, range(-5, 6), value_dict)
-    value_dict = calculate_win_chance(sum_probs2, range(-6, 5), value_dict)
-    value_dict = calculate_win_chance(sum_probs1, range(-1, 0), value_dict, verbose=True)
-    print(value_dict)
+    value_dict = {0: 1}
+    # cross_probs1, sum_probs1 = calculate_cross_probs(effects, results_p1)
+    # cross_probs2, sum_probs2 = calculate_cross_probs(effects, results_p2)
+    cross_probs3, sum_probs3 = calculate_cross_probs(effects, results_p3)
+
+    # value_dict = calculate_win_chance(sum_probs1, range(-1, 0), value_dict, verbose=True)
+    # value_dict = calculate_win_chance(sum_probs1, range(-5, 5), value_dict)
+    value_dict = calculate_win_chance(sum_probs3, range(4, 5), value_dict, verbose=True)
 
 
 if __name__ == "__main__":
